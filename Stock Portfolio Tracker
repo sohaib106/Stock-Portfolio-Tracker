@@ -1,0 +1,92 @@
+import requests
+
+# Replace 'YOUR_API_KEY' with your actual API key
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://www.alphavantage.co/query'
+
+# This dictionary will store the user's portfolio
+portfolio = {}
+
+def get_stock_price(symbol):
+    """Fetch the latest stock price for a given symbol."""
+    params = {
+        'function': 'TIME_SERIES_INTRADAY',
+        'symbol': symbol,
+        'interval': '1min',
+        'apikey': API_KEY
+    }
+    response = requests.get(BASE_URL, params=params)
+    data = response.json()
+
+    try:
+        # Get the latest price from the response
+        latest_time = list(data['Time Series (1min)'].keys())[0]
+        price = float(data['Time Series (1min)'][latest_time]['1. open'])
+        return price
+    except KeyError:
+        print("Error fetching data. Please check the stock symbol or try again later.")
+        return None
+
+def add_stock(symbol, quantity):
+    """Add a stock to the portfolio."""
+    price = get_stock_price(symbol)
+    if price:
+        portfolio[symbol] = {'quantity': quantity, 'price': price}
+        print(f"Added {quantity} shares of {symbol} at ${price:.2f} per share.")
+
+def remove_stock(symbol):
+    """Remove a stock from the portfolio."""
+    if symbol in portfolio:
+        del portfolio[symbol]
+        print(f"Removed {symbol} from your portfolio.")
+    else:
+        print(f"{symbol} is not in your portfolio.")
+
+def view_portfolio():
+    """Display the current portfolio."""
+    print("\nYour Portfolio:")
+    for symbol, details in portfolio.items():
+        print(f"{symbol}: {details['quantity']} shares at ${details['price']:.2f} per share")
+    print()
+
+def track_performance():
+    """Track and display the performance of the portfolio."""
+    print("\nPortfolio Performance:")
+    total_value = 0
+    for symbol, details in portfolio.items():
+        current_price = get_stock_price(symbol)
+        if current_price:
+            value = current_price * details['quantity']
+            total_value += value
+            print(f"{symbol}: {details['quantity']} shares, Current Price: ${current_price:.2f}, Total Value: ${value:.2f}")
+    print(f"Total Portfolio Value: ${total_value:.2f}\n")
+
+def main():
+    while True:
+        print("1. Add Stock")
+        print("2. Remove Stock")
+        print("3. View Portfolio")
+        print("4. Track Performance")
+        print("5. Exit")
+
+        choice = input("Enter your choice: ")
+
+        if choice == '1':
+            symbol = input("Enter the stock symbol (e.g., AAPL, TSLA): ").upper()
+            quantity = int(input("Enter the quantity: "))
+            add_stock(symbol, quantity)
+        elif choice == '2':
+            symbol = input("Enter the stock symbol to remove: ").upper()
+            remove_stock(symbol)
+        elif choice == '3':
+            view_portfolio()
+        elif choice == '4':
+            track_performance()
+        elif choice == '5':
+            print("Exiting the program.")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main()
